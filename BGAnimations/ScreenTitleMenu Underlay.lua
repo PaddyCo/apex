@@ -1,7 +1,5 @@
 local t = Def.ActorFrame {}
 
-local bpm = 120
-
 -- Background
 t[#t+1] = BackgroundActor
 
@@ -23,22 +21,6 @@ t[#t+1] = Def.Sprite {
   end,
 }
 
--- Circle
-t[#t+1] = Def.Sprite {
-  Texture = THEME:GetPathG("", "Circle.png"),
-  InitCommand = function(this)
-    this:xy(-250, 30+211)
-        :decelerate(1)
-        :xy(72+211, 30+211)
-        :queuecommand("Animate")
-  end,
-
-  AnimateCommand = function(this)
-    PulseAction(this, 1.1, 1/(bpm/60))
-    this:queuecommand("Animate")
-  end
-}
-
 -- Bars
 local bar_colors = { ThemeColor.Green, ThemeColor.Red, ThemeColor.Yellow, ThemeColor.Blue }
 for i, color in ipairs(bar_colors) do
@@ -58,7 +40,7 @@ for i, color in ipairs(bar_colors) do
 
     AnimateCommand = function(this)
       local offset = math.random(256)-128
-      this:decelerate(1/(bpm / 60))
+      this:decelerate(1/(DM:GetBPM() / 60))
           :xy(this.base_x-offset, this.base_y-offset)
           :queuecommand("Animate")
 
