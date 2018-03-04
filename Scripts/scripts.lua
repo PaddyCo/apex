@@ -7,7 +7,6 @@ dofile(THEME:GetPathO("", "fonts.lua"))
 
 -- Actors
 dofile(THEME:GetPathO("", "actors/background.lua"))
-dofile(THEME:GetPathO("", "actors/text_banner.lua"))
 
 -- Actions
 dofile(THEME:GetPathO("", "actions/blink.lua"))

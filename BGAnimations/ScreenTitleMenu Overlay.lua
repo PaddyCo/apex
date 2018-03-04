@@ -1,5 +1,4 @@
 local container
-local starting = false
 
 GAMESTATE:Reset()
 
@@ -102,19 +101,25 @@ t[#t+1] = Def.ActorFrame {
 
 -- Input Handler
 local function handle_input(event)
-  if starting then return end
-
   if event.type == "InputEventType_FirstPress" and event.GameButton == "Start" then
-    starting = true
     SCREENMAN:PlayStartSound()
+    SCREENMAN:GetTopScreen():lockinput(5)
     GAMESTATE:JoinInput(event.PlayerNumber)
     container:queuecommand("Start")
   end
 
 end
+
 t[#t+1] = Def.Actor {
   OnCommand = function(this)
     SCREENMAN:GetTopScreen():AddInputCallback(handle_input)
+
+    this:sleep(0.1)
+        :queuecommand("PlayMusic")
+  end,
+
+  PlayMusicCommand = function(this)
+    SOUND:PlayMusicPart(THEME:GetPathS("", "Menu Music.ogg"), 0, 168, 0, 0, true, true, true)
   end,
 }
 
