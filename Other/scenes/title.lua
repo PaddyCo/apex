@@ -186,7 +186,7 @@ function TitleScene:HandleInput(event)
   if event.type == "InputEventType_FirstPress" and event.GameButton == "Start" then
     SCREENMAN:PlayStartSound()
     SCREENMAN:GetTopScreen():lockinput(1)
-    GAMESTATE:JoinInput(event.PlayerNumber)
+    GAMESTATE:JoinPlayer(event.PlayerNumber)
     self:GetContainer():queuecommand("Start")
   end
 end

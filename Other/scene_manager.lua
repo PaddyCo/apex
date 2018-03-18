@@ -1,10 +1,10 @@
 SCENE = {}
 SCENE_mt = {  __index = SCENE }
 
-
 SCENE._scenes = {}
 
 function SCENE:SetCurrentScene(key)
+  SCREENMAN:GetTopScreen():lockinput(0.25)
 
   if self:GetCurrentScene() ~= nil then
     self:GetCurrentScene():GetContainer():queuecommand("Exit")
@@ -23,6 +23,16 @@ end
 
 function SCENE:GetCurrentScene()
   return self._current_scene
+end
+
+function SCENE:GetCurrentKey()
+  for key, scene in pairs(self:GetScenes()) do
+    if scene == self:GetCurrentScene() then
+      return key
+    end
+  end
+
+  return nil
 end
 
 function SCENE:AddScene(key, scene)

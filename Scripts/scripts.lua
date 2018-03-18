@@ -1,6 +1,7 @@
 -- Utility
 dofile(THEME:GetPathO("", "debug.lua"))
 dofile(THEME:GetPathO("", "inherit.lua"))
+dofile(THEME:GetPathO("", "table.lua"))
 
 -- Theme Globals
 dofile(THEME:GetPathO("", "colors.lua"))
