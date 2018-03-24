@@ -6,6 +6,9 @@ SCENE._scenes = {}
 function SCENE:SetCurrentScene(key)
   SCREENMAN:GetTopScreen():lockinput(0.25)
 
+  local old_scene_key = SCENE:GetCurrentKey()
+  local old_scene = self._current_scene
+
   if self:GetCurrentScene() ~= nil then
     self:GetCurrentScene():GetContainer():queuecommand("Exit")
   end
@@ -18,7 +21,14 @@ function SCENE:SetCurrentScene(key)
 
   self._current_scene = new_scene
 
+  new_scene:OnEnter(old_scene_key)
+
+  if old_scene then
+    old_scene:OnExit(SCENE:GetCurrentKey())
+  end
+
   new_scene:GetContainer():queuecommand("Enter")
+
 end
 
 function SCENE:GetCurrentScene()

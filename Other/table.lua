@@ -53,3 +53,15 @@ function table.find_all(array, func)
 
   return results
 end
+
+function table.find_first(array, func)
+  results = {}
+
+  for i, v in ipairs(array) do
+    if func(v) then
+      return v
+    end
+  end
+
+  return nil
+end

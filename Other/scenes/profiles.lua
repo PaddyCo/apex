@@ -24,6 +24,7 @@ function ProfilesScene:Actor()
 
     EnterCommand = function(this)
       self.selected_profile_index = {}
+
       this:visible(true)
           :queuecommand("Update")
     end,
@@ -43,7 +44,17 @@ function ProfilesScene:Actor()
     end,
 
     DoStartCommand = function(this)
-      SCENE:SetCurrentScene("StyleSelect")
+      -- If two players, assume its versus, if not go to style select
+      if #GAMESTATE:GetHumanPlayers() <= 1 then
+        SCENE:SetCurrentScene("StyleSelect")
+      else
+        local style = table.find_first(GAMEMAN:GetStylesForGame("Dance"), function(style)
+          return style:GetName() == "versus"
+        end)
+
+        GAMESTATE:SetCurrentStyle(style)
+        SCENE:SetCurrentScene("MainMenu")
+      end
     end,
   }
 
@@ -207,11 +218,9 @@ function ProfilesScene:Actor()
         UpdateCommand = function(this)
           this:stoptweening()
           if (self.current_profile_index[player_number] == i) then
-            this:linear(0.1)
-                :diffuse(ThemeColor.Yellow)
+            this:diffuse(ThemeColor.Yellow)
           else
-            this:linear(0.1)
-                :diffuse(ThemeColor.Black)
+            this:diffuse(ThemeColor.Black)
           end
         end,
       }
@@ -408,6 +417,12 @@ function ProfilesScene:RenderDetailRow(y, title, value_func, suffix)
   }
 
   return row
+end
+
+function ProfilesScene:OnEnter(previous_scene)
+  if previous_scene ~= "Title" then
+    GAMESTATE:Reset()
+  end
 end
 
 function ProfilesScene:HandleInput(event)

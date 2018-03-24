@@ -34,6 +34,12 @@ function SceneClass:Actor()
   }
 end
 
+function SceneClass:OnEnter(previous_scene)
+end
+
+function SceneClass:OnExit(new_scene)
+end
+
 function SceneClass:HandleInput(event)
 end
 
