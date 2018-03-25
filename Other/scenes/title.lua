@@ -27,11 +27,6 @@ function TitleScene:Actor()
       this:visible(false)
     end,
 
-    PlayMusicCommand = function(this)
-      DM:SetBPM(120)
-      SOUND:PlayMusicPart(THEME:GetPathS("", "Menu Music.ogg"), 0, 168, 0, 0, true, true, true)
-    end,
-
     StartCommand = function(this)
       this:sleep(0.65)
           :queuecommand("DoStart")

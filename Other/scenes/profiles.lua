@@ -329,7 +329,6 @@ function ProfilesScene:Actor()
             :halign(0)
             :valign(0)
             :x(64)
-            :y(-48)
       end,
 
       EnterCommand = function(this)
@@ -420,6 +419,7 @@ function ProfilesScene:RenderDetailRow(y, title, value_func, suffix)
 end
 
 function ProfilesScene:OnEnter(previous_scene)
+  SOUND:PlayOnce(THEME:GetPathS("", "profileselect.ogg"), true)
   if previous_scene ~= "Title" then
     GAMESTATE:Reset()
   end
@@ -471,6 +471,7 @@ function ProfilesScene:HandleInput(event)
         SCREENMAN:GetTopScreen():SetProfileIndex(player_number, self.selected_profile_index[player_number])
       end
       self:GetContainer():queuecommand("Start")
+      SCREENMAN:PlayStartSound()
     end
   end
 

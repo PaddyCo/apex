@@ -47,6 +47,7 @@ end
 
 function SCENE:AddScene(key, scene)
   self._scenes[key] = scene
+  return scene
 end
 
 function SCENE:GetScenes()

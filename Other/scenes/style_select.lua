@@ -203,6 +203,7 @@ function StyleSelectScene:HandleInput(event)
   if event.type == "InputEventType_FirstPress" and event.GameButton == "Start" then
     self.fast_exit = false
     GAMESTATE:SetCurrentStyle(self.styles[self.current_index])
+    SCREENMAN:PlayStartSound()
     SCENE:GetCurrentScene():GetContainer():queuecommand("Start")
     SCENE:SetCurrentScene("MainMenu")
   end

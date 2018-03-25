@@ -6,10 +6,12 @@ dofile(THEME:GetPathO("", "scenes/main_menu.lua"))
 DM:SetBPM(120)
 
 SCENE:Reset()
-SCENE:AddScene("Profiles", ProfilesScene.Create())
-SCENE:AddScene("Title", TitleScene.Create())
-SCENE:AddScene("StyleSelect", StyleSelectScene.Create())
-SCENE:AddScene("MainMenu", MainMenuScene.Create())
+local scenes = {
+  SCENE:AddScene("MainMenu", MainMenuScene.Create()),
+  SCENE:AddScene("StyleSelect", StyleSelectScene.Create()),
+  SCENE:AddScene("Title", TitleScene.Create()),
+  SCENE:AddScene("Profiles", ProfilesScene.Create()),
+}
 
 local handle_input = function(event)
   if SCENE:GetCurrentScene() ~= nil then
@@ -26,14 +28,20 @@ end
 
 local t = Def.ActorFrame {
   OnCommand = function(this)
-    SCENE:SetCurrentScene("Title")
+    SCENE:SetCurrentScene("MainMenu")
     SCREENMAN:GetTopScreen():AddInputCallback(handle_input)
+
+    this:sleep(0.25)
+        :queuecommand("PlayMusic")
+  end,
+
+  PlayMusicCommand = function(this)
+    DM:SetBPM(120)
+    SOUND:PlayMusicPart(THEME:GetPathS("", "Menu Music.ogg"), 0, 168, 0, 0, true, true, true)
   end,
 }
 
-local scenes = SCENE:GetScenes()
-
-for key, scene in pairs(scenes) do
+for i, scene in ipairs(scenes) do
   t[#t+1] = scene:Actor()
 end
 
