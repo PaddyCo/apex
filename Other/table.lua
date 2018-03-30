@@ -65,3 +65,15 @@ function table.find_first(array, func)
 
   return nil
 end
+
+function table.insert_table(array, insert_array, index)
+  new_table = table.deep_copy(array)
+
+  index = index == nil and #array or index
+  for i, v in ipairs(insert_array) do
+    table.insert(new_table, index+i, v)
+  end
+
+  return new_table
+end
+

@@ -22,9 +22,9 @@ function MainMenuScene:Actor()
   }
 
   self.buttons = {
-    { key = "Regular", icon = "Regular.png" },
-    { key = "Course", icon = "Course.png" },
-    { key = "Battle", icon = "Battle.png" },
+    { key = "Regular", mode = "PlayMode_Regular", icon = "Regular.png" },
+    { key = "Course", mode = "PlayMode_Nonstop", icon = "Course.png" },
+    { key = "Battle", mode = "PlayMode_Battle", icon = "Battle.png" },
   }
 
   self.current_index = 1
@@ -146,6 +146,10 @@ end
 function MainMenuScene:HandleInput(event)
   if event.type == "InputEventType_FirstPress" and event.GameButton == "Back" then
     SCENE:SetCurrentScene("Title")
+  end
+  if event.type == "InputEventType_FirstPress" and event.GameButton == "Start" then
+    GAMESTATE:SetCurrentPlayMode(self.buttons[self.current_index].mode)
+    SCREENMAN:SetNewScreen("ScreenMusicSelect")
   end
 
   if event.type == "InputEventType_Release" then return end

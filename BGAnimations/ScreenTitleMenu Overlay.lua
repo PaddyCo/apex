@@ -28,7 +28,7 @@ end
 
 local t = Def.ActorFrame {
   OnCommand = function(this)
-    SCENE:SetCurrentScene("MainMenu")
+    SCENE:SetCurrentScene("Title")
     SCREENMAN:GetTopScreen():AddInputCallback(handle_input)
 
     this:sleep(0.25)

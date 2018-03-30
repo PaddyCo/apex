@@ -6,9 +6,11 @@ dofile(THEME:GetPathO("", "table.lua"))
 -- Theme Globals
 dofile(THEME:GetPathO("", "colors.lua"))
 dofile(THEME:GetPathO("", "fonts.lua"))
+dofile(THEME:GetPathO("", "enum_indices.lua"))
 
 -- Theme
 dofile(THEME:GetPathO("", "dancemaster.lua"))
+dofile(THEME:GetPathO("", "sort_functions.lua"))
 dofile(THEME:GetPathO("", "scene.lua"))
 dofile(THEME:GetPathO("", "scene_manager.lua"))
 

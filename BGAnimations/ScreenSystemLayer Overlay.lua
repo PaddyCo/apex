@@ -72,7 +72,7 @@ local function CreditsText( pn )
   text[#text+1] = Def.Quad {
     InitCommand = function(this)
       this:zoomto(10, NAME_PLATE_HEIGHT)
-          :diffuse(left_side and ThemeColor.Red or ThemeColor.Blue) -- TODO: Set to the profile color when implemented
+          :diffuse(DM:GetPlayerColor(pn))
           :halign(left_side and 0 or 1)
           :valign(1)
           :x(left_side and NAME_PLATE_WIDTH-1 or -NAME_PLATE_WIDTH+1)
