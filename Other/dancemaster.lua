@@ -4,10 +4,21 @@ DM_mt = {  __index = DM }
 -- BPM
 function DM:SetBPM(bpm)
   self._bpm = bpm
+  if DM:GetBackgroundContainer() ~= nil then
+    DM:GetBackgroundContainer():queuecommand("UpdateBPM")
+  end
 end
 
 function DM:GetBPM()
   return self._bpm
+end
+
+function DM:SetBackgroundContainer(container)
+  self._background_container = container
+end
+
+function DM:GetBackgroundContainer()
+  return self._background_container
 end
 
 DM:SetBPM(0)

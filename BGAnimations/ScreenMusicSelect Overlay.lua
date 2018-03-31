@@ -388,8 +388,9 @@ local function on_scroll()
     local info = scroller:get_info_at_focus_pos()
 
     if info.type == "Song" then
-      local avarage_bpm = (info.song:GetDisplayBpms()[1] + info.song:GetDisplayBpms()[2]) / 2
-      DM:SetBPM(avarage_bpm)
+      local preview_beat = info.steps:GetTimingData():GetBeatFromElapsedTime(info.song:GetSampleStart())
+      local preview_bpm = info.steps:GetTimingData():GetBPMAtBeat(preview_beat)
+      DM:SetBPM(preview_bpm)
     else
       DM:SetBPM(120)
     end
@@ -463,6 +464,30 @@ t[#t+1] = Def.Actor {
     scroller:set_info_set(MENUENTRY:GetRoot(), 1)
     container:queuecommand("Setup")
     SCREENMAN:GetTopScreen():AddInputCallback(handle_input)
+  end,
+
+  SetupCommand = function(this)
+    this:queuecommand("PlayPreview")
+  end,
+
+  ScrollCommand = function(this)
+    SOUND:StopMusic()
+    this:stoptweening()
+        :sleep(0.1)
+        :queuecommand("PlayPreview")
+  end,
+
+  SetCommand = function(this)
+    this:queuecommand("PlayPreview")
+  end,
+
+  PlayPreviewCommand = function(subself)
+    local info = scroller:get_info_at_focus_pos()
+    if info.type == "Song" then
+      SOUND:PlayMusicPart(info.song:GetPreviewMusicPath(), info.song:GetSampleStart(), info.song:GetSampleLength(), 1, 1, true, true)
+    else
+      SOUND:StopMusic()
+    end
   end,
 }
 

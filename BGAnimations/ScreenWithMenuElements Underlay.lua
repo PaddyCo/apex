@@ -1,4 +1,8 @@
-local t = Def.ActorFrame {}
+local t = Def.ActorFrame {
+  InitCommand = function(this)
+    DM:SetBackgroundContainer(this)
+  end,
+}
 
 -- Background
 t[#t+1] = BackgroundActor
@@ -38,9 +42,15 @@ for i, color in ipairs(bar_colors) do
           :queuecommand("Animate")
     end,
 
+    UpdateBPMCommand = function(this)
+      this:stoptweening()
+          :queuecommand("Animate")
+    end,
+
     AnimateCommand = function(this)
       local offset = math.random(256)-128
-      this:decelerate(1/(DM:GetBPM() / 30))
+      local bpm = math.min(DM:GetBPM(), 1000)
+      this:decelerate(1/(bpm / 30))
           :xy(this.base_x-offset, this.base_y-offset)
           :queuecommand("Animate")
 
