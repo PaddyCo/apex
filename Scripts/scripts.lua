@@ -11,6 +11,7 @@ dofile(THEME:GetPathO("", "enum_indices.lua"))
 -- Theme
 dofile(THEME:GetPathO("", "dancemaster.lua"))
 dofile(THEME:GetPathO("", "sort_functions.lua"))
+dofile(THEME:GetPathO("", "menu_entries.lua"))
 dofile(THEME:GetPathO("", "scene.lua"))
 dofile(THEME:GetPathO("", "scene_manager.lua"))
 

@@ -286,70 +286,18 @@ local item_mt = {
 scroller = setmetatable({ disable_wrapping = false }, item_scroller_mt)
 
 -- Get list entries
-local function get_root_entries()
-  local entries = {}
-
-  entries[#entries+1] = { id = "AllByTitle", type = "All", name = "By Title", sort_func = SORTFUNC.ByTitle }
-  entries[#entries+1] = { id = "AllByDifficulty", type = "All", name = "By Difficulty", sort_func = SORTFUNC.ByDifficulty }
-
-  entries[#entries+1] = { id = "ProfileClear", type = "Profile", name = "Clear" }
-  entries[#entries+1] = { id = "ProfileFC", type = "Profile", name = "Full Combo" }
-  entries[#entries+1] = { id = "ProfilePFC", type = "Profile", name = "Perfect Full Combo" }
-  entries[#entries+1] = { id = "ProfileA", type = "Profile", name = "A" }
-  entries[#entries+1] = { id = "ProfileAA", type = "Profile", name = "AA" }
-  entries[#entries+1] = { id = "ProfileAAA", type = "Profile", name = "AAA" }
-
-  local groups = table.map(SONGMAN:GetSongGroupNames(), function(name) return { id = "Group" .. name, type = "Group", name = name } end)
-
-  entries = table.insert_table(groups, entries, 0)
-
-  return entries
-end
-
-local function get_all_entries(parent_entry)
-  local entries = { parent_entry }
-  local all_steps = {}
-  for _i, song  in ipairs(SONGMAN:GetAllSongs()) do
-    for _, steps in ipairs(song:GetStepsByStepsType(GAMESTATE:GetCurrentStyle():GetStepsType())) do
-      all_steps[#all_steps+1] = { type = "Song", song = song, steps = steps }
-    end
-  end
-
-  table.sort(all_steps, parent_entry.sort_func)
-
-  entries = table.insert_table(entries, all_steps, #entries)
-
-  return entries
-
-end
-
-local function get_group_entries(group_name)
-  local entries = {{ id = "Group" .. group_name, type = "Group", name = group_name }}
-  local all_steps = {}
-  for _i, song  in ipairs(SONGMAN:GetSongsInGroup(group_name)) do
-    local steps = table.map(song:GetStepsByStepsType(GAMESTATE:GetCurrentStyle():GetStepsType()), function(steps) return { type = "Song", song = song, steps = steps } end)
-    all_steps = table.insert_table(all_steps, steps, #all_steps)
-  end
-
-  table.sort(all_steps, SORTFUNC.ByDifficulty)
-
-  entries = table.insert_table(entries, all_steps, #entries)
-
-  return entries
-end
-
 local function get_entries()
   if current_entry == nil then
-    return get_root_entries()
+    return MENUENTRY:GetRoot()
   elseif current_entry.type == "Group" then
-    return get_group_entries(current_entry.name)
+    return MENUENTRY:GetGroup(current_entry.name)
   elseif current_entry.type == "All" then
-    return get_all_entries(current_entry.sort_func)
+    return MENUENTRY:GetAll(current_entry.sort_func)
   else
     lua.ReportScriptError("Unknown current entry in music wheel! Don't know which entries to get!")
   end
 
-  return get_root_entries()
+  return MENUENTRY:GetRoot()
 end
 
 local function set_entries(entries, focus_index)
@@ -361,19 +309,19 @@ end
 local function select_entry(entry)
   -- Root
   if entry == nil then
-    set_entries(get_root_entries(), 1)
+    set_entries(MENUENTRY:GetRoot(), 1)
   -- Close folder
   elseif current_entry ~= nil and entry.id == current_entry.id then
-    local entries = get_root_entries()
+    local entries = MENUENTRY:GetRoot()
     local index = table.find_index(table.map(entries, function(e) return e.id end), current_entry.id)
-    set_entries(get_root_entries(), index)
+    set_entries(MENUENTRY:GetRoot(), index)
     current_entry = nil
   -- Groups
   elseif entry.type == "Group" then
-    set_entries(get_group_entries(entry.name), 1)
+    set_entries(MENUENTRY:GetGroup(entry.name), 1)
     current_entry = entry
   elseif entry.type == "All" then
-    set_entries(get_all_entries(entry), 1)
+    set_entries(MENUENTRY:GetAll(entry), 1)
     current_entry = entry
   else
     lua.ReportScriptError("Unknown current entry in music wheel! Don't know action to trigger!")
@@ -433,16 +381,28 @@ t[#t+1] = Def.ActorFrame {
 
 }
 
-local function scroll(amount)
-    scroller:scroll_by_amount(amount)
+local function on_scroll()
     container:queuecommand("Scroll")
     container:queuecommand("Update")
+
+    local info = scroller:get_info_at_focus_pos()
+
+    if info.type == "Song" then
+      local avarage_bpm = (info.song:GetDisplayBpms()[1] + info.song:GetDisplayBpms()[2]) / 2
+      DM:SetBPM(avarage_bpm)
+    else
+      DM:SetBPM(120)
+    end
+end
+
+local function scroll(amount)
+    scroller:scroll_by_amount(amount)
+    on_scroll()
 end
 
 local function scroll_to(index)
     scroller:scroll_to_pos(index)
-    container:queuecommand("Scroll")
-    container:queuecommand("Update")
+    on_scroll()
 end
 
 local last_button_press_timestamps = {}
@@ -471,23 +431,25 @@ local handle_input = function(event)
     select_entry(current_entry)
   end
 
-  if is_double_tap("MenuRight", event) then
-    local e = scroller:get_info_at_focus_pos()
-    if e.type == "Song" then
-      local meter_list = table.map(scroller:get_info_set(), function(i) return i.type == "Song" and i.steps:GetMeter() or 0 end)
-      scroll_to(table.find_index(meter_list, e.steps:GetMeter()+1))
-    end
-  elseif event.GameButton == "MenuRight" then
+  -- TODO: Find a good way for user to use "next page" functionality
+  -- if is_double_tap("MenuRight", event) then
+  --   local e = scroller:get_info_at_focus_pos()
+  --   if e.type == "Song" then
+  --     local meter_list = table.map(scroller:get_info_set(), function(i) return i.type == "Song" and i.steps:GetMeter() or 0 end)
+  --     scroll_to(table.find_index(meter_list, e.steps:GetMeter()+1))
+  --   end
+  if event.GameButton == "MenuRight" then
     scroll(1)
   end
 
-  if is_double_tap("MenuLeft", event) then
-    local e = scroller:get_info_at_focus_pos()
-    if e.type == "Song" then
-      local meter_list = table.map(scroller:get_info_set(), function(i) return i.type == "Song" and i.steps:GetMeter() or 0 end)
-      scroll_to(table.find_index(meter_list, e.steps:GetMeter()-1))
-    end
-  elseif event.GameButton == "MenuLeft" then
+  -- TODO: Find a good way for user to use "previous page" functionality
+  --if is_double_tap("MenuLeft", event) then
+  --  local e = scroller:get_info_at_focus_pos()
+  --  if e.type == "Song" then
+  --    local meter_list = table.map(scroller:get_info_set(), function(i) return i.type == "Song" and i.steps:GetMeter() or 0 end)
+  --    scroll_to(table.find_index(meter_list, e.steps:GetMeter()-1))
+  --  end
+  if event.GameButton == "MenuLeft" then
     scroll(-1)
   end
 
@@ -498,7 +460,7 @@ end
 
 t[#t+1] = Def.Actor {
   OnCommand = function(this)
-    scroller:set_info_set(get_root_entries(), 1)
+    scroller:set_info_set(MENUENTRY:GetRoot(), 1)
     container:queuecommand("Setup")
     SCREENMAN:GetTopScreen():AddInputCallback(handle_input)
   end,
