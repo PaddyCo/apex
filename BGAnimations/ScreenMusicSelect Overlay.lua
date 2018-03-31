@@ -14,29 +14,33 @@ local t = Def.ActorFrame {
 
 local ITEM_HEIGHT = 54
 local ITEM_MARGIN = 2
-local ITEM_WIDTH = 650
+local ITEM_WIDTH = 751
 local DIFFICULTY_BOX_SIZE = ITEM_HEIGHT
 local CLEAR_LAMP_WIDTH = 16
 local SCROLLBAR_HEIGHT = SCREEN_HEIGHT - 256
 
 local item_mt = {
   __index = {
+    set_x = function(self)
+      local this = self.container
+      local base_x = 0
+      if self.data.type == "Song" then
+        this:x(self.is_focused and base_x+33 or base_x+66)
+      else
+        this:x(self.is_focused and base_x-33 or base_x)
+      end
+    end,
+
     create_actors = function(self, params)
       local t = Def.ActorFrame {
         InitCommand = function(this)
           self.container = this
-          this:x(ITEM_WIDTH * 1.5)
         end,
 
         SetupCommand = function(this)
-          local base_x = 100
           this:queuecommand("Update")
               :decelerate(0.2)
-          if self.data.type == "Song" then
-            this:x(self.is_focused and base_x+33 or base_x+66)
-          else
-            this:x(self.is_focused and base_x-33 or base_x)
-          end
+          self:set_x()
         end,
 
         SetCommand = function(this)
@@ -56,22 +60,12 @@ local item_mt = {
         end,
 
         ScrollCommand = function(this)
-          local base_x = 100
-          if self.data.type == "Song" then
-            this:x(self.is_focused and base_x+33 or base_x+66)
-          else
-            this:x(self.is_focused and base_x-33 or base_x)
-          end
+          self:set_x()
         end,
 
         AfterSetCommand = function(this)
           this:linear(0.1)
-          local base_x = 100
-          if self.data.type == "Song" then
-            this:x(self.is_focused and base_x+33 or base_x+66)
-          else
-            this:x(self.is_focused and base_x-33 or base_x)
-          end
+          self:set_x()
           this:queuecommand("Update")
         end,
       }
@@ -153,18 +147,42 @@ local item_mt = {
           this:visible(self.data.type == "Song")
         end,
 
+        SetCommand = function(this)
+          this:stoptweening()
+          this:queuecommand("Blink")
+        end,
+
         Def.Quad {
           InitCommand = function(this)
             this:zoomto(CLEAR_LAMP_WIDTH, ITEM_HEIGHT)
                 :diffuse(ThemeColor.Black)
           end,
+
+          BlinkCommand = function(this)
+            this:stoptweening()
+            if self.data.type ~= "Song" then return end
+            this:diffuse(CLEAR.GetColor(self.data.clear_types["PlayerNumber_P1"]))
+                :sleep(0.02)
+                :queuecommand("Blink")
+          end,
+
         },
 
         Def.Sprite {
           InitCommand = function(this)
             this:Load(THEME:GetPathG("", "Glow.png"))
-                :diffuse(ThemeColor.Yellow)
-                :visible(false)
+          end,
+
+          BlinkCommand = function(this)
+            this:stoptweening()
+            if self.data.type ~= "Song" then return end
+
+            local color = CLEAR.GetColor(self.data.clear_types["PlayerNumber_P1"])
+
+            this:visible(color ~= ThemeColor.Black)
+            this:diffuse(CLEAR.GetColor(self.data.clear_types["PlayerNumber_P1"]))
+                :sleep(0.02)
+                :queuecommand("Blink")
           end,
         },
       }
@@ -316,6 +334,7 @@ local function select_entry(entry)
     local index = table.find_index(table.map(entries, function(e) return e.id end), current_entry.id)
     set_entries(MENUENTRY:GetRoot(), index)
     current_entry = nil
+    song_information:SetSong(nil)
   -- Groups
   elseif entry.type == "Group" then
     set_entries(MENUENTRY:GetGroup(entry.name), 1)
@@ -366,10 +385,10 @@ t[#t+1] = Def.ActorFrame {
     end,
 
     UpdateCommand = function(this)
-      local height = math.max(SCROLLBAR_HEIGHT / #scroller:get_info_set(), 3)
+      local height = math.max(SCROLLBAR_HEIGHT / (#scroller:get_info_set() / 18), 3)
       this:stoptweening()
           :linear(0.1)
-          :y(math.min(math.max((SCROLLBAR_HEIGHT / #scroller:get_info_set()) * (scroller:get_current_index()-1), 1), SCROLLBAR_HEIGHT - (height)))
+          :y(math.min(math.max((SCROLLBAR_HEIGHT / #scroller:get_info_set()) * (scroller:get_current_index()-1) - height/2, 1), SCROLLBAR_HEIGHT - (height)))
           :zoomto(6, height)
     end,
 
@@ -377,23 +396,34 @@ t[#t+1] = Def.ActorFrame {
       this:queuecommand("Update")
     end,
   }
-
-
 }
 
+-- Song Information
+local song_information = SongInformation.Create()
+t[#t+1] = song_information:CreateActors(132, 64)
+
+-- Difficulties
+local song_difficulties = SongDifficulty.Create()
+t[#t+1] = song_difficulties:CreateActors(132, 500)
+
 local function on_scroll()
-    container:queuecommand("Scroll")
-    container:queuecommand("Update")
+  container:queuecommand("Scroll")
+  container:queuecommand("Update")
 
-    local info = scroller:get_info_at_focus_pos()
+  local info = scroller:get_info_at_focus_pos()
+  if (info.type == "Song") then
+    song_information:SetSong(info.song)
+  else
+    song_information:SetSong(nil)
+  end
+end
 
-    if info.type == "Song" then
-      local preview_beat = info.steps:GetTimingData():GetBeatFromElapsedTime(info.song:GetSampleStart())
-      local preview_bpm = info.steps:GetTimingData():GetBPMAtBeat(preview_beat)
-      DM:SetBPM(preview_bpm)
-    else
-      DM:SetBPM(120)
-    end
+local function on_stop_scroll()
+  container:queuecommand("EndScroll")
+end
+
+local function on_start_scroll()
+  container:queuecommand("StartScroll")
 end
 
 local function scroll(amount)
@@ -420,6 +450,16 @@ local function is_double_tap(button, event)
 end
 
 local handle_input = function(event)
+  if event.type == "InputEventType_FirstPress" and event.GameButton == "MenuLeft"
+  or event.type == "InputEventType_FirstPress" and event.GameButton == "MenuRight" then
+    on_start_scroll()
+  end
+
+  if event.type == "InputEventType_Release" and event.GameButton == "MenuLeft"
+  or event.type == "InputEventType_Release" and event.GameButton == "MenuRight" then
+    on_stop_scroll()
+  end
+
   if event.type == "InputEventType_Release" then return end
 
   local current_row_info = scroller:get_info_at_focus_pos()
@@ -470,7 +510,12 @@ t[#t+1] = Def.Actor {
     this:queuecommand("PlayPreview")
   end,
 
-  ScrollCommand = function(this)
+  StartScrollCommand = function(this)
+    SOUND:StopMusic()
+    DM:SetBPM(0)
+  end,
+
+  EndScrollCommand = function(this)
     SOUND:StopMusic()
     this:stoptweening()
         :sleep(0.1)
@@ -484,11 +529,43 @@ t[#t+1] = Def.Actor {
   PlayPreviewCommand = function(subself)
     local info = scroller:get_info_at_focus_pos()
     if info.type == "Song" then
+      container:queuecommand("PauseBGM")
+      local preview_beat = info.steps:GetTimingData():GetBeatFromElapsedTime(info.song:GetSampleStart())
+      local preview_bpm = info.steps:GetTimingData():GetBPMAtBeat(preview_beat)
+      DM:SetBPM(preview_bpm)
       SOUND:PlayMusicPart(info.song:GetPreviewMusicPath(), info.song:GetSampleStart(), info.song:GetSampleLength(), 1, 1, true, true)
     else
+      container:queuecommand("PlayBGM")
       SOUND:StopMusic()
     end
   end,
+}
+
+t[#t+1] = Def.Sound {
+  InitCommand = function(this)
+    this:load(THEME:GetPathS("", "Menu Music.ogg"))
+  end,
+
+  OnCommand = function(this)
+    this:play()
+  end,
+
+  StartScrollCommand = function(this)
+    this:stoptweening()
+        :sleep(0.2)
+        :queuecommand("PlayBGM")
+  end,
+
+  PlayBGMCommand = function(this)
+    DM:SetBPM(120)
+    this:pause(false)
+  end,
+
+  PauseBGMCommand = function(this)
+    this:stoptweening()
+        :pause(true)
+  end,
+
 }
 
 return t

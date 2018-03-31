@@ -10,11 +10,21 @@ local function create_group_entry(group_name)
 end
 
 local function create_song_entry(song, steps)
+  local high_scores = {
+    PlayerNumber_P1 = PROFILEMAN:GetProfile("PlayerNumber_P1"):GetHighScoreListIfExists(song, steps),
+    PlayerNumber_P2 = PROFILEMAN:GetProfile("PlayerNumber_P2"):GetHighScoreListIfExists(song, steps),
+  }
+
   return {
     id = "Song" .. song:GetSongFilePath(), -- TODO: Make this actually unqiue, isn't used atm so no big deal
     type = "Song",
     song = song,
     steps = steps,
+    high_scores = high_scores,
+    clear_types = {
+      PlayerNumber_P1 = CLEAR.GetType(high_scores["PlayerNumber_P1"]),
+      PlayerNumber_P2 = CLEAR.GetType(high_scores["PlayerNumber_P2"]),
+    },
   }
 end
 

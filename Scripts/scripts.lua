@@ -7,6 +7,7 @@ dofile(THEME:GetPathO("", "table.lua"))
 dofile(THEME:GetPathO("", "colors.lua"))
 dofile(THEME:GetPathO("", "fonts.lua"))
 dofile(THEME:GetPathO("", "enum_indices.lua"))
+dofile(THEME:GetPathO("", "clear.lua"))
 
 -- Theme
 dofile(THEME:GetPathO("", "dancemaster.lua"))
@@ -17,6 +18,7 @@ dofile(THEME:GetPathO("", "scene_manager.lua"))
 
 -- Actors
 dofile(THEME:GetPathO("", "actors/background.lua"))
+dofile(THEME:GetPathO("", "actors/song_information.lua"))
 
 -- Actions
 dofile(THEME:GetPathO("", "actions/blink.lua"))

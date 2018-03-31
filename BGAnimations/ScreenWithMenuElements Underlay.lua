@@ -49,7 +49,13 @@ for i, color in ipairs(bar_colors) do
 
     AnimateCommand = function(this)
       local offset = math.random(256)-128
-      local bpm = math.min(DM:GetBPM(), 1000)
+      local bpm = math.max(math.min(DM:GetBPM(), 1000), 0.000001)
+      if (bpm < 1) then
+        this:decelerate(1)
+            :xy(this.base_x + 400, this.base_y + 400)
+        return
+      end
+
       this:decelerate(1/(bpm / 30))
           :xy(this.base_x-offset, this.base_y-offset)
           :queuecommand("Animate")
