@@ -72,16 +72,16 @@ local function CreditsText( pn )
   text[#text+1] = Def.Quad {
     InitCommand = function(this)
       this:zoomto(10, NAME_PLATE_HEIGHT)
-          :diffuse(DM:GetPlayerColor(pn))
+          :diffuse(APEX:GetPlayerColor(pn))
           :halign(left_side and 0 or 1)
           :valign(1)
           :x(left_side and NAME_PLATE_WIDTH-1 or -NAME_PLATE_WIDTH+1)
 
     end,
 
-		UpdateTextCommand=function(this)
+    UpdateTextCommand=function(this)
       this:visible(GAMESTATE:IsSideJoined(pn))
-		end,
+    end,
   }
 
 	text[#text+1] = LoadFont(ThemeFonts.Regular) .. {
@@ -92,9 +92,9 @@ local function CreditsText( pn )
           :visible(false)
 		end,
 
-		UpdateTextCommand=function(this)
-			local str = ScreenSystemLayerHelpers.GetCreditsMessage(pn);
-			this:settext(str)
+    UpdateTextCommand=function(this)
+      local str = ScreenSystemLayerHelpers.GetCreditsMessage(pn);
+      this:settext(str)
           :visible(true)
           :xy(0, 0)
           :valign(0.5)
@@ -114,70 +114,69 @@ local function CreditsText( pn )
             :valign(1)
             :diffuse(ThemeColor.Black)
       end
-		end,
+    end,
 
-		UpdateVisibleCommand=function(this)
-			local screen = SCREENMAN:GetTopScreen();
-			local bShow = true;
-			if screen then
-				local sClass = screen:GetName();
-				bShow = THEME:GetMetric( sClass, "ShowCreditDisplay" );
-			end
-
-			this:visible( bShow );
-		end,
-	};
+    UpdateVisibleCommand=function(this)
+      local screen = SCREENMAN:GetTopScreen();
+      local bShow = true;
+      if screen then
+        local sClass = screen:GetName();
+        bShow = THEME:GetMetric( sClass, "ShowCreditDisplay" );
+        end
+      this:visible( bShow );
+    end,
+};
 
 	return text;
 end;
 
 local t = Def.ActorFrame {}
-	-- Aux
+-- Aux
 t[#t+1] = LoadActor(THEME:GetPathB("ScreenSystemLayer","aux"));
-	-- Credits
+-- Credits
 t[#t+1] = Def.ActorFrame {
---[[  	PlayerPane( PLAYER_1 ) .. {
-		InitCommand=cmd(x,scale(0.125,0,1,SCREEN_LEFT,SCREEN_WIDTH);y,SCREEN_BOTTOM-16)
-	}; --]]
- 	CreditsText( PLAYER_1 );
-	CreditsText( PLAYER_2 );
+  CreditsText( PLAYER_1 );
+  CreditsText( PLAYER_2 );
 };
-	-- Text
+-- Text
 t[#t+1] = Def.ActorFrame {
-	Def.Quad {
-		InitCommand=cmd(zoomtowidth,SCREEN_WIDTH;zoomtoheight,30;horizalign,left;vertalign,top;y,SCREEN_TOP;diffuse,color("0,0,0,0"));
-		OnCommand=cmd(finishtweening;diffusealpha,0.85;);
-		OffCommand=cmd(sleep,3;linear,0.5;diffusealpha,0;);
-	};
-	Def.BitmapText{
-		Font=ThemeFonts.Regular;
-		Name="Text";
+  Def.Quad {
+    InitCommand=cmd(zoomtowidth,SCREEN_WIDTH;zoomtoheight,30;horizalign,left;vertalign,top;y,SCREEN_TOP;diffuse,color("0,0,0,0"));
+    OnCommand=cmd(finishtweening;diffusealpha,0.85;);
+    OffCommand=cmd(sleep,3;linear,0.5;diffusealpha,0;);
+  };
+
+  Def.BitmapText{
+    Font=ThemeFonts.Regular;
+    Name="Text";
     InitCommand = function(this)
       this:maxwidth(750)
-          :horizalign(left)
-          :vertalign(top)
-          :y(SCREEN_TOP+10)
-          :x(SCREEN_LEFT+10)
-          :shadowlength(1)
-          :diffusealpha(0)
-          :diffuse(ThemeColor.White)
+      :horizalign(left)
+      :vertalign(top)
+      :y(SCREEN_TOP+10)
+      :x(SCREEN_LEFT+10)
+      :shadowlength(1)
+      :diffusealpha(0)
+      :diffuse(ThemeColor.White)
     end,
     OnCommand = function(this)
       this:finishtweening()
-          :diffusealpha(1)
-          :zoom(0.5)
+      :diffusealpha(1)
+      :zoom(0.5)
     end,
-		OffCommand=cmd(sleep,3;linear,0.5;diffusealpha,0;);
-	};
-	SystemMessageMessageCommand = function(self, params)
-		self:GetChild("Text"):settext( params.Message );
-		self:playcommand( "On" );
-		if params.NoAnimate then
-			self:finishtweening();
-		end
-		self:playcommand( "Off" );
-	end;
-	HideSystemMessageMessageCommand = cmd(finishtweening);
+    OffCommand=cmd(sleep,3;linear,0.5;diffusealpha,0;);
+  };
+
+  SystemMessageMessageCommand = function(self, params)
+    self:GetChild("Text"):settext( params.Message );
+    self:playcommand( "On" );
+    if params.NoAnimate then
+      self:finishtweening();
+    end
+    self:playcommand( "Off" );
+  end;
+
+  HideSystemMessageMessageCommand = cmd(finishtweening);
 };
 
 return t;

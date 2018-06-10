@@ -1,5 +1,4 @@
-
-DM:SetBPM(120)
+APEX:SetBPM(120)
 
 -- Item Scroller setup
 local container = nil
@@ -158,6 +157,11 @@ local item_mt = {
                 :diffuse(ThemeColor.Black)
           end,
 
+          UpdateCommand = function(this)
+            this:stoptweening()
+                :queuecommand("Blink")
+          end,
+
           BlinkCommand = function(this)
             this:stoptweening()
             if self.data.type ~= "Song" then return end
@@ -173,9 +177,22 @@ local item_mt = {
             this:Load(THEME:GetPathG("", "Glow.png"))
           end,
 
+          UpdateCommand = function(this)
+            this:stoptweening()
+                :queuecommand("Blink")
+          end,
+
+          SetCommand = function(this)
+            this:stoptweening()
+                :queuecommand("Blink")
+          end,
+
           BlinkCommand = function(this)
             this:stoptweening()
-            if self.data.type ~= "Song" then return end
+            if self.data.type ~= "Song" then
+              this:visible(false)
+              return
+            end
 
             local color = CLEAR.GetColor(self.data.clear_types["PlayerNumber_P1"])
 
@@ -303,50 +320,6 @@ local item_mt = {
 
 scroller = setmetatable({ disable_wrapping = false }, item_scroller_mt)
 
--- Get list entries
-local function get_entries()
-  if current_entry == nil then
-    return MENUENTRY:GetRoot()
-  elseif current_entry.type == "Group" then
-    return MENUENTRY:GetGroup(current_entry.name)
-  elseif current_entry.type == "All" then
-    return MENUENTRY:GetAll(current_entry.sort_func)
-  else
-    lua.ReportScriptError("Unknown current entry in music wheel! Don't know which entries to get!")
-  end
-
-  return MENUENTRY:GetRoot()
-end
-
-local function set_entries(entries, focus_index)
-  scroller:set_info_set(entries, focus_index)
-  container:queuecommand("Set")
-
-end
-
-local function select_entry(entry)
-  -- Root
-  if entry == nil then
-    set_entries(MENUENTRY:GetRoot(), 1)
-  -- Close folder
-  elseif current_entry ~= nil and entry.id == current_entry.id then
-    local entries = MENUENTRY:GetRoot()
-    local index = table.find_index(table.map(entries, function(e) return e.id end), current_entry.id)
-    set_entries(MENUENTRY:GetRoot(), index)
-    current_entry = nil
-    song_information:SetSong(nil)
-  -- Groups
-  elseif entry.type == "Group" then
-    set_entries(MENUENTRY:GetGroup(entry.name), 1)
-    current_entry = entry
-  elseif entry.type == "All" then
-    set_entries(MENUENTRY:GetAll(entry), 1)
-    current_entry = entry
-  else
-    lua.ReportScriptError("Unknown current entry in music wheel! Don't know action to trigger!")
-  end
-end
-
 -- Actors
 t[#t+1] = scroller:create_actors("MusicList", 24, item_mt, 1095 + (ITEM_WIDTH/2), -132)
 
@@ -402,9 +375,46 @@ t[#t+1] = Def.ActorFrame {
 local song_information = SongInformation.Create()
 t[#t+1] = song_information:CreateActors(132, 64)
 
--- Difficulties
-local song_difficulties = SongDifficulty.Create()
-t[#t+1] = song_difficulties:CreateActors(132, 500)
+-- Song Difficulty
+local song_difficulty = SongDifficulty.Create("PlayerNumber_P1")
+t[#t+1] = song_difficulty:CreateActors(329, 535)
+
+local function set_song(song, current_steps)
+  song_information:SetSong(song)
+  song_difficulty:SetSong(song, current_steps)
+end
+
+local function set_entries(entries, focus_index)
+  scroller:set_info_set(entries, focus_index)
+  container:queuecommand("Set")
+
+end
+
+local function select_entry(entry)
+  -- Root
+  if entry == nil then
+    set_entries(MENUENTRY:GetRoot(), 1)
+  -- Close folder
+  elseif current_entry ~= nil and entry.id == current_entry.id then
+    local entries = MENUENTRY:GetRoot()
+    local index = table.find_index(table.map(entries, function(e) return e.id end), current_entry.id)
+    set_entries(MENUENTRY:GetRoot(), index)
+    current_entry = nil
+    set_song(nil)
+  -- Groups
+  elseif entry.type == "Group" then
+    set_entries(MENUENTRY:GetGroup(entry.name), 1)
+    current_entry = entry
+  elseif entry.type == "All" then
+    set_entries(entry.entries, 1)
+    current_entry = entry
+  elseif entry.type == "Profile" then
+    set_entries(entry.entries, 1)
+    current_entry = entry
+  else
+    lua.ReportScriptError("Unknown current entry in music wheel! Don't know action to trigger!")
+  end
+end
 
 local function on_scroll()
   container:queuecommand("Scroll")
@@ -412,9 +422,9 @@ local function on_scroll()
 
   local info = scroller:get_info_at_focus_pos()
   if (info.type == "Song") then
-    song_information:SetSong(info.song)
+    set_song(info.song, info.steps)
   else
-    song_information:SetSong(nil)
+    set_song(nil)
   end
 end
 
@@ -436,13 +446,42 @@ local function scroll_to(index)
     on_scroll()
 end
 
+function scroll_to_steps(steps)
+  for i, v in ipairs(scroller.info_set) do
+    if v.steps == steps then
+      scroll_to(i)
+    end
+  end
+end
+
+function scroll_difficulty(amount)
+  local info = scroller:get_info_at_focus_pos()
+  if info.type == "Song" then
+    local all_steps = info.song:GetStepsByStepsType(GAMESTATE:GetCurrentStyle():GetStepsType())
+    -- Turn steps into entries (so we get clear lamps and can reuse the sorting functionality)
+    local entries = table.map(all_steps, function(steps) return MENUENTRY.CreateSongEntry(info.song, steps) end)
+    -- Find the current difficulty and set it to focused (Before sort so the indices match up)
+    -- Sort it by meter and difficulty
+    table.sort(entries, SORTFUNC.ByDifficulty)
+
+    local current_steps_index = table.find_index(table.map(entries, function(e) return e.steps end), info.steps)
+
+    local new_index = current_steps_index + amount
+
+    if new_index >= 1 and new_index <= #all_steps then
+      scroll_to_steps(entries[current_steps_index+amount].steps)
+    end
+  end
+end
+
 local last_button_press_timestamps = {}
 
-local function is_double_tap(button, event)
+local function is_double_tap(button, event, tolerance)
   if event.type == "InputEventType_FirstPress"
      and event.GameButton == button
      and last_button_press_timestamps[event.GameButton] ~= nil
-     and last_button_press_timestamps[event.GameButton] > GetTimeSinceStart() - 0.15 then
+     and last_button_press_timestamps[event.GameButton] > GetTimeSinceStart() - tolerance then
+    last_button_press_timestamps[event.GameButton] = -1
     return true
   else
     return false
@@ -468,8 +507,12 @@ local handle_input = function(event)
     select_entry(scroller:get_info_at_focus_pos())
   end
 
-  if event.GameButton == "Back" and event.type == "InputEventType_FirstPress" and current_entry ~= nil then
-    select_entry(current_entry)
+  if event.GameButton == "Back" and event.type == "InputEventType_FirstPress" then
+    if current_entry ~= nil then
+      select_entry(current_entry)
+    else
+      SCREENMAN:SetNewScreen("ScreenMainMenu")
+    end
   end
 
   -- TODO: Find a good way for user to use "next page" functionality
@@ -494,25 +537,57 @@ local handle_input = function(event)
     scroll(-1)
   end
 
+  if is_double_tap("MenuUp", event, 0.2) then
+    scroll_difficulty(-1)
+  end
+
+  if is_double_tap("MenuDown", event, 0.2) then
+    scroll_difficulty(1)
+  end
+
   if event.type == "InputEventType_FirstPress" then
-    last_button_press_timestamps[event.GameButton] = GetTimeSinceStart()
+    -- Ignore it if set to -1, because that means a double tap was executed this update
+    if last_button_press_timestamps[event.GameButton] ~= -1 then
+      last_button_press_timestamps[event.GameButton] = GetTimeSinceStart()
+    else
+      last_button_press_timestamps[event.GameButton] = nil
+    end
   end
 end
 
-t[#t+1] = Def.Actor {
+t[#t+1] = Def.Quad {
   OnCommand = function(this)
-    scroller:set_info_set(MENUENTRY:GetRoot(), 1)
-    container:queuecommand("Setup")
-    SCREENMAN:GetTopScreen():AddInputCallback(handle_input)
+    this:sleep(0.1)
+        :queuecommand("LoadRoot")
+  end,
+
+  LoadRootCommand = function(this)
+    MENUENTRY:InitializeSongQueue()
+    this:queuecommand("ProcessQueue")
+  end,
+
+  -- TODO: Add loading indicator while processing songs
+  ProcessQueueCommand = function(this)
+    if MENUENTRY:ProcessSongQueue(400) > 0 then
+      this:sleep(0.01)
+          :queuecommand("ProcessQueue")
+    else
+      MENUENTRY:Sort()
+      scroller:set_info_set(MENUENTRY:GetRoot(), 1)
+      this:queuecommand("Setup")
+    end
   end,
 
   SetupCommand = function(this)
-    this:queuecommand("PlayPreview")
+    SCREENMAN:GetTopScreen():AddInputCallback(handle_input)
+    container:queuecommand("Update")
+        :queuecommand("PlayPreview")
+        :sleep(0.1)
   end,
 
   StartScrollCommand = function(this)
     SOUND:StopMusic()
-    DM:SetBPM(0)
+    APEX:SetBPM(0)
   end,
 
   EndScrollCommand = function(this)
@@ -532,7 +607,7 @@ t[#t+1] = Def.Actor {
       container:queuecommand("PauseBGM")
       local preview_beat = info.steps:GetTimingData():GetBeatFromElapsedTime(info.song:GetSampleStart())
       local preview_bpm = info.steps:GetTimingData():GetBPMAtBeat(preview_beat)
-      DM:SetBPM(preview_bpm)
+      APEX:SetBPM(preview_bpm)
       SOUND:PlayMusicPart(info.song:GetPreviewMusicPath(), info.song:GetSampleStart(), info.song:GetSampleLength(), 1, 1, true, true)
     else
       container:queuecommand("PlayBGM")
@@ -557,7 +632,7 @@ t[#t+1] = Def.Sound {
   end,
 
   PlayBGMCommand = function(this)
-    DM:SetBPM(120)
+    APEX:SetBPM(120)
     this:pause(false)
   end,
 

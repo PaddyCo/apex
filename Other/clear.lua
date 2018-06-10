@@ -1,16 +1,6 @@
 CLEAR = {}
 
-function CLEAR.GetType(high_score_list)
-  if high_score_list == nil then return nil end
-  local high_scores = high_score_list:GetHighScores()
-  if high_scores == nil then return nil end
-
-  -- Get highest score
-  local compare_grade = function(a, b)
-    return GradeIndex[a:GetGrade()] < GradeIndex[b:GetGrade()]
-  end
-  local score = table.compare(high_scores, compare_grade)
-
+function CLEAR.GetType(score)
   if score == nil then
     return nil
   end
@@ -29,6 +19,8 @@ function CLEAR.GetType(high_score_list)
 end
 
 
+-- Caclulate the current color of the clear lamp here based on current runtime, this is to make
+-- sure all lamps are (depending how often they poll this) in sync no matter what.
 function CLEAR.GetColor(clear_type)
   if clear_type == nil then return ThemeColor.Black end
 
@@ -38,11 +30,11 @@ function CLEAR.GetColor(clear_type)
   end
 
   if clear_type == "Clear" then
-    return color_cycle(15, { ThemeColor.Yellow, Brightness(ThemeColor.Yellow, 0.9) })
-  elseif clear_type == "FullCombo" or "PerfectFullCombo" or "MarvelousFullCombo" then
-    return color_cycle(25, { ThemeColor.Yellow, ThemeColor.Blue, ThemeColor.Red, ThemeColor.Green })
+    return color_cycle(20, { ThemeColor.Yellow, Brightness(ThemeColor.Yellow, 0.95) })
+  elseif clear_type == "FullCombo" or clear_type == "PerfectFullCombo" or clear_type == "MarvelousFullCombo" then
+    return color_cycle(10, { ColorLightTone(ThemeColor.Yellow), ThemeColor.Blue, ThemeColor.Red, ThemeColor.Green })
   elseif clear_type == "Failed" then
-    return color_cycle(30, { ThemeColor.Red, Brightness(ThemeColor.Red, 0.6) })
+    return color_cycle(30, { ThemeColor.Red, Brightness(ThemeColor.Red, 0.7) })
   else
     return ThemeColor.Black
   end

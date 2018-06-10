@@ -1,6 +1,6 @@
 local t = Def.ActorFrame {
   InitCommand = function(this)
-    DM:SetBackgroundContainer(this)
+    APEX:SetBackgroundContainer(this)
   end,
 }
 
@@ -49,7 +49,7 @@ for i, color in ipairs(bar_colors) do
 
     AnimateCommand = function(this)
       local offset = math.random(256)-128
-      local bpm = math.max(math.min(DM:GetBPM(), 1000), 0.000001)
+      local bpm = math.max(math.min(APEX:GetBPM(), 1000), 0.000001)
       if (bpm < 1) then
         this:decelerate(1)
             :xy(this.base_x + 400, this.base_y + 400)

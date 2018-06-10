@@ -1,5 +1,4 @@
 SORTFUNC = {}
-SORTFUNC_mt = {  __index = SORTFUNC }
 
 function SORTFUNC.ByDifficulty(a, b)
   if (a.steps:GetMeter() == b.steps:GetMeter() and a.song:GetDisplayFullTitle() == b.song:GetDisplayFullTitle()) then
@@ -8,7 +7,7 @@ function SORTFUNC.ByDifficulty(a, b)
     return DifficultyIndex[a.steps:GetDifficulty()] < DifficultyIndex[b.steps:GetDifficulty()]
   elseif a.steps:GetMeter() == b.steps:GetMeter() then
     -- If the levels are same, sort by title
-    return a.song:GetDisplayFullTitle() < b.song:GetDisplayFullTitle()
+    return a.song:GetTranslitFullTitle() < b.song:GetTranslitFullTitle()
   else
     -- Otherwise, sort on level
     return a.steps:GetMeter() < b.steps:GetMeter()
@@ -28,7 +27,3 @@ function SORTFUNC.ByTitle(a, b)
     return a.song:GetDisplayFullTitle() < b.song:GetDisplayFullTitle()
   end
 end
-
--- Initialize
-SORTFUNC = {}
-setmetatable(SORTFUNC, SORTFUNC_mt)

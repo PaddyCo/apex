@@ -7,6 +7,21 @@ function SceneClass.Create()
   return new_screen
 end
 
+function SceneClass:Render()
+  return Def.ActorFrame {
+    InitCommand = function(this)
+      self:SetContainer(this)
+    end,
+
+    OnCommand = function(this)
+      SCREENMAN:GetTopScreen():AddInputCallback(function(event) self:HandleInput(event) end)
+      this:queuecommand("Enter")
+    end,
+
+    self:Actor()
+  }
+end
+
 function SceneClass:Actor()
   return Def.ActorFrame {
     InitCommand = function(this)
@@ -32,6 +47,12 @@ function SceneClass:Actor()
       end,
     }
   }
+end
+
+function SceneClass:GoToScreen(screen_name)
+  local top_screen = SCREENMAN:GetTopScreen()
+  top_screen:SetNextScreenName(screen_name)
+  top_screen:StartTransitioningScreen("SM_GoToNextScreen")
 end
 
 function SceneClass:OnEnter(previous_scene)

@@ -1,7 +1,7 @@
 function table.map(array, func)
   local new_array = {}
-  for i,v in ipairs(array) do
-    new_array[i] = func(v)
+  for i,v in pairs(array) do
+    new_array[#new_array+1] = func(v)
   end
   return new_array
 end
@@ -76,4 +76,24 @@ function table.insert_table(array, insert_array, index)
 
   return new_table
 end
+
+function table.slice_of(tbl, first, last, step)
+  local sliced = {}
+
+  for i = first or 1, last or #tbl, step or 1 do
+    sliced[#sliced+1] = tbl[i]
+  end
+
+  return sliced
+end
+
+function table.sample(tbl)
+    local keys = {}
+    for key, value in pairs(tbl) do
+        keys[#keys+1] = key --Store keys in another table
+    end
+    index = keys[math.random(1, #keys)]
+    return tbl[index]
+end
+
 

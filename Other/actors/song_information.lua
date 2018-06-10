@@ -97,7 +97,7 @@ function SongInformationActor:CreateActors(base_x, base_y)
 
         this:stoptweening()
             :diffusealpha(0)
-            :sleep(WAIT_FOR_LOAD and 0.1 or 0)
+            :sleep(WAIT_FOR_LOAD and 0.15 or 0)
             :queuecommand("Load")
       end,
 
@@ -278,7 +278,7 @@ function SongInformationActor:CreateActors(base_x, base_y)
       Font = ThemeFonts.Regular,
       InitCommand = function(this)
         self.length_label = this
-        this:settext("Length")
+        this:settext(THEME:GetString("SongInformation", "Length"))
             :diffuse(ThemeColor.Black)
             :zoom(0.8)
             :x(-JACKET_SIZE/2)
