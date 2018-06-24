@@ -198,7 +198,7 @@ end
 function StyleSelectScene:HandleInput(event)
   if event.type == "InputEventType_FirstPress" and event.GameButton == "Back" then
     GAMESTATE:Reset()
-    self:GoToScreen("ScreenProfileSelect")
+    self:GoToScreen("ScreenSelectProfile")
     self.fast_exit = true
   end
   if event.type == "InputEventType_FirstPress" and event.GameButton == "Start" then

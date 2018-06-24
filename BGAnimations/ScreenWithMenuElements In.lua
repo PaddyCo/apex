@@ -1,33 +1,45 @@
-local transition_time = 0.5
-
 return Def.ActorFrame {
   Def.Quad{
     InitCommand = function(self)
       self:diffuse(APEX:GetTransitionColor())
-      self:FullScreen()
-      self:Center()
+          :zoomto(SCREEN_WIDTH*1.5, SCREEN_HEIGHT / 2)
+          :x(SCREEN_WIDTH/2)
+          :y(SCREEN_HEIGHT/4)
     end,
 
     StartTransitioningCommand= function(self)
-      self:accelerate(transition_time / 2)
-          :x(-SCREEN_WIDTH)
-          :sleep(transition_time / 2)
+      self:accelerate(0.2)
+          :y(-SCREEN_HEIGHT/4)
+    end
+  },
+
+  Def.Quad{
+    InitCommand = function(self)
+      self:diffuse(APEX:GetTransitionColor())
+          :zoomto(SCREEN_WIDTH*1.5, SCREEN_HEIGHT / 2)
+          :x(SCREEN_WIDTH/2)
+          :y(SCREEN_HEIGHT-SCREEN_HEIGHT/4)
+    end,
+
+    StartTransitioningCommand= function(self)
+      self:accelerate(0.2)
+          :y(SCREEN_HEIGHT + SCREEN_HEIGHT/4)
     end
   },
 
   Def.Sprite {
     Texture = THEME:GetPathG("", "Logo.png"),
-    InitCommand = function(this)
-      this:sleep(transition_time / 2)
-          :zoom(0.35)
-          :Center()
+    InitCommand = function(self)
+      self:zoom(0.35)
           :diffusealpha(1)
+          :Center()
     end,
 
-    OnCommand = function(this)
-      this:linear(transition_time / 2)
-          :y((SCREEN_HEIGHT/2) + 32)
+    StartTransitioningCommand = function(self)
+      self:accelerate(0.3)
           :diffusealpha(0)
+          :x(SCREEN_WIDTH/2 + 128)
     end,
-  },
+  }
 }
+

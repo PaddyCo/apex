@@ -36,7 +36,7 @@ function TitleScene:Actor()
 
     DoStartCommand = function(this)
       local top_screen = SCREENMAN:GetTopScreen()
-      top_screen:SetNextScreenName("ScreenProfileSelect")
+      top_screen:SetNextScreenName("ScreenSelectProfile")
       top_screen:StartTransitioningScreen("SM_GoToNextScreen")
     end,
   }

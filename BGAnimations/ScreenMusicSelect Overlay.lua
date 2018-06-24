@@ -409,7 +409,7 @@ local function select_entry(entry)
     set_entries(entry.entries, 1)
     current_entry = entry
   elseif entry.type == "Profile" then
-    set_entries(entry.entries, 1)
+    set_entries(MENUENTRY:GetFolder(entry), 1)
     current_entry = entry
   else
     lua.ReportScriptError("Unknown current entry in music wheel! Don't know action to trigger!")

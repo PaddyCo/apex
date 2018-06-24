@@ -8,8 +8,21 @@ function MENUENTRY:InitializeSongQueue()
 
   self.songs = {}
   self.groups = {}
+  self.clear_types = {
+    Failed = {},
+    Clear = {},
+    FullCombo = {},
+    PerfectFullCombo = {},
+    MarvelousFullCombo = {}
+  }
+
   for _, group_name in pairs(SONGMAN:GetSongGroupNames()) do
     self.groups[group_name] = MENUENTRY.CreateGroupEntry(group_name)
+  end
+
+  for clear_type, _ in pairs(self.clear_types) do
+    local label = THEME:GetString("ClearType", clear_type)
+    self.clear_types[clear_type] = MENUENTRY.CreateFolderEntry("Profile", label)
   end
 
   self.song_queue = {}
@@ -27,17 +40,28 @@ function MENUENTRY:ProcessSongQueue(amount)
   for _, s in ipairs(table.slice_of(self.song_queue, 1, amount)) do
     local entry = MENUENTRY.CreateSongEntry(s.song, s.steps)
     self.songs[#self.songs+1] = entry
+
+    -- Group by song group
     local group_name = s.song:GetGroupName()
     if self.groups[group_name] ~= nil then
       table.insert(self.groups[s.song:GetGroupName()].entries, entry.id)
     else
       lua.ReportScriptError("Group with name " .. group_name .. " not found!")
     end
+
+    -- Group by clear type
+    -- TODO: Group for every player
+    local score = SCORE.GetHighScore("PlayerNumber_P1", s.song, s.steps)
+    if score ~= nil then
+      local clear_type = CLEAR.GetType(score)
+      table.insert(self.clear_types[clear_type].entries, entry.id)
+    end
   end
 
   self.song_queue = table.slice_of(self.song_queue, amount)
 
-  SM(self.total_songs - #self.song_queue  .. "/" .. self.total_songs)
+
+  --SM(self.total_songs - #self.song_queue  .. "/" .. self.total_songs)
 
   return #self.song_queue
 end
@@ -58,75 +82,22 @@ end
 function MENUENTRY:GetRoot()
   local entries = {
     MENUENTRY.CreateFolderEntry("All", "All songs"),
-    MENUENTRY.CreateFolderEntry("Profile", "Perfect Full Combo", {
-      filter_func = function(player_number, song, steps)
-        return FILTERFUNC.ByClearType(player_number, song, steps, "PerfectFullCombo")
-      end
-    }),
-    MENUENTRY.CreateFolderEntry("Profile", "Full Combo", {
-      filter_func = function(player_number, song, steps)
-        return FILTERFUNC.ByClearType(player_number, song, steps, "FullCombo")
-      end
-    }),
-    MENUENTRY.CreateFolderEntry("Profile", "Clear", {
-      filter_func = function(player_number, song, steps)
-        return FILTERFUNC.ByClearType(player_number, song, steps, "Clear")
-      end
-    }),
-    MENUENTRY.CreateFolderEntry("Profile", "Failed", {
-      filter_func = function(player_number, song, steps)
-        return FILTERFUNC.ByClearType(player_number, song, steps, "Failed")
-      end
-    }),
   }
 
-  entries = table.insert_table(table.map(SONGMAN:GetSongGroupNames(), function(name) return self.groups[name] end), entries, 0)
-
-  return entries
-end
-
-function MENUENTRY:GetRootOld()
-  local entries = {
-    MENUENTRY.CreateFolderEntry("All", "All songs"),
-    MENUENTRY.CreateFolderEntry("Profile", "Perfect Full Combo", {
-      filter_func = function(player_number, song, steps)
-        return FILTERFUNC.ByClearType(player_number, song, steps, "PerfectFullCombo")
-      end
-    }),
-    MENUENTRY.CreateFolderEntry("Profile", "Full Combo", {
-      filter_func = function(player_number, song, steps)
-        return FILTERFUNC.ByClearType(player_number, song, steps, "FullCombo")
-      end
-    }),
-    MENUENTRY.CreateFolderEntry("Profile", "Clear", {
-      filter_func = function(player_number, song, steps)
-        return FILTERFUNC.ByClearType(player_number, song, steps, "Clear")
-      end
-    }),
-    MENUENTRY.CreateFolderEntry("Profile", "Failed", {
-      filter_func = function(player_number, song, steps)
-        return FILTERFUNC.ByClearType(player_number, song, steps, "Failed")
-      end
-    }),
-  }
-
-  for i=1, 7 do
-    entries[#entries+1] = MENUENTRY.CreateFolderEntry("Profile", THEME:GetString("Grade", "Tier0" .. i), {
-      filter_func = function(player_number, song, steps)
-        return FILTERFUNC.ByGrade(player_number, song, steps, "Grade_Tier0" .. i)
-      end
-    })
+  -- Clear types
+  for _, clear_type in pairs(CLEAR.GetEnum()) do
+    if #self.clear_types[clear_type].entries > 0 then
+      entries[#entries+1] = self.clear_types[clear_type]
+    end
   end
 
-  -- Filter out all empty folders
-  entries = table.find_all(entries, function(e) return #e.entries > 1 end)
+  -- Groups
+  entries = table.insert_table(entries, table.map(SONGMAN:GetSongGroupNames(), function(name) return self.groups[name] end), #entries)
 
-  local groups = table.map(SONGMAN:GetSongGroupNames(), create_group_entry)
-
-  entries = table.insert_table(groups, entries, 0)
 
   return entries
 end
+
 
 function MENUENTRY:GetAll(parent_entry)
   local entries = { parent_entry }
@@ -143,6 +114,25 @@ function MENUENTRY:GetGroup(group_name)
   local entries = { self.groups[group_name] }
 
   local all_steps = MENUENTRY:GetSongs(self.groups[group_name].entries)
+
+  entries = table.insert_table(entries, all_steps, #entries)
+
+  return entries
+end
+
+function MENUENTRY:GetFolder(entry)
+  local entries = { entry }
+  local all_steps = MENUENTRY:GetSongs(entry.entries)
+
+  return table.insert_table(entries, all_steps, #entries)
+end
+
+function MENUENTRY:GetClearType(clear_type)
+  local entries = { self.clear_types[clear_type] }
+
+  local all_steps = MENUENTRY:GetSongs(entries.entries)
+
+  SM(entries.entries)
 
   entries = table.insert_table(entries, all_steps, #entries)
 
@@ -199,6 +189,7 @@ function MENUENTRY.CreateFolderEntry(type, name, data)
     id = type .. name,
     type = type,
     name = name,
+    entries = {}
   }
 
   -- Merge entry and data tables
@@ -206,8 +197,10 @@ function MENUENTRY.CreateFolderEntry(type, name, data)
     for k, v in pairs(data) do entry[k] = v end
   end
 
-  -- Get all child entries
-  entry.entries = MENUENTRY:GetAll(entry)
+  if type == "All" then
+    -- Get all child entries
+    entry.entries = MENUENTRY:GetAll(entry)
+  end
 
   return entry
 end

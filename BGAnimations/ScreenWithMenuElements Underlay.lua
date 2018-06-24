@@ -13,6 +13,7 @@ t[#t+1] = Def.Sprite {
   InitCommand = function(this)
     this:y(SCREEN_CENTER_Y)
         :diffuse(ThemeColor.White)
+        :diffusealpha(0.25)
         :queuecommand("Animate")
   end,
 

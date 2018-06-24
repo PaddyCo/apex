@@ -16,16 +16,11 @@ local item_mt = {
         end,
         HideCommand = function(this)
           this:stoptweening()
-              :linear(0.2)
-              :x(-32)
               :diffusealpha(0)
 
         end,
         ShowCommand = function(this)
           this:stoptweening()
-              :visible(true)
-              :linear(0.2)
-              :x(0)
               :diffusealpha(1)
         end,
       }
@@ -129,13 +124,44 @@ local item_mt = {
         end,
 
         -- Grade
-        Def.BitmapText {
-          Font = ThemeFonts.Title,
+        Def.Sprite {
+          Texture = THEME:GetPathG("", "GradeA.png"),
           InitCommand = function(this)
-            this:diffuse(ThemeColor.Yellow)
+            this:halign(0)
+                :valign(0)
+                :zoom(0.25)
+                :y(8)
+          end,
+
+          UpdateCommand = function(this)
+            this:stoptweening()
+            if self.data == nil then return end
+            if self.data.score ~= nil then
+              local grade = THEME:GetString("Grade", self.data.score:GetGrade():gsub("Grade_", ""))
+              this:Load(THEME:GetPathG("", string.gsub("Grade1.png", "1", grade)))
+                  :visible(true)
+                  :x((-ITEM_WIDTH/2) + 58)
+                  :diffusealpha(0)
+                  :decelerate(0.2)
+                  :x((-ITEM_WIDTH/2) + 8)
+                  :diffusealpha(1)
+
+            else
+              this:visible(false)
+            end
+
+          end,
+        },
+
+        -- Clear type
+        Def.BitmapText {
+          Font = ThemeFonts.Regular,
+          InitCommand = function(this)
+            this:diffuse(ThemeColor.White)
                 :halign(0)
                 :valign(0)
-                :y(8)
+                :zoom(0.75)
+                :y(64)
           end,
 
           UpdateCommand = function(this)
@@ -143,20 +169,80 @@ local item_mt = {
             if self.data == nil then return end
 
             if self.data.score ~= nil then
-              this:settext(THEME:GetString("Grade", self.data.score:GetGrade():gsub("Grade_", "")))
-                  :diffuse(GradeIndex[self.data.score:GetGrade()] < 4 and ThemeColor.Yellow or ThemeColor.White)
+              local clear_type = CLEAR.GetType(self.data.score)
+              this:settext(THEME:GetString("ClearType", clear_type))
+                  :diffuse(CLEAR.GetColor(clear_type))
                   :x((-ITEM_WIDTH/2) + 58)
                   :diffusealpha(0)
                   :decelerate(0.2)
                   :x((-ITEM_WIDTH/2) + 8)
                   :diffusealpha(1)
+                  :queuecommand("Blink")
+            end
+          end,
+
+          BlinkCommand = function(this)
+            if self.data == nil or self.data.score == nil then return end
+            this:diffuse(CLEAR.GetColor(self.data.clear_types["PlayerNumber_P1"]))
+                :sleep(0.02)
+                :queuecommand("Blink")
+          end,
+        },
+
+        -- Miss Count (Label)
+        Def.BitmapText {
+          Font = ThemeFonts.Regular,
+          InitCommand = function(this)
+            this:diffuse(ThemeColor.Red)
+                :halign(1)
+                :valign(0)
+                :zoom(0.75)
+                :y(92)
+          end,
+
+          UpdateCommand = function(this)
+            this:stoptweening()
+            if self.data == nil then return end
+
+            if self.data.score ~= nil then
+              this:settext("Miss Count")
+                  :x((-ITEM_WIDTH/2) + 156)
+                  :diffusealpha(1)
             end
           end,
         },
 
+        -- Miss Count (Value)
+        Def.BitmapText {
+          Font = ThemeFonts.Regular,
+          InitCommand = function(this)
+            this:diffuse(ThemeColor.White)
+                :halign(0)
+                :valign(0)
+                :zoom(0.75)
+                :y(92)
+          end,
+
+          UpdateCommand = function(this)
+            this:stoptweening()
+            if self.data == nil then return end
+
+            if self.data.score ~= nil then
+              this:settext(CLEAR.GetMissCount(self.data.score))
+                  :x((-ITEM_WIDTH/2) + 190)
+                  :diffusealpha(0)
+                  :decelerate(0.2)
+                  :x((-ITEM_WIDTH/2) + 170)
+                  :diffusealpha(1)
+            end
+          end,
+        },
+
+
+
         -- Percentage
         Def.BitmapText {
-          Font = ThemeFonts.Thin,
+          Font = ThemeFonts.Regular,
           InitCommand = function(this)
             this:diffuse(ThemeColor.White)
                 :halign(1)
